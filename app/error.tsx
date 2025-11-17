@@ -1,0 +1,33 @@
+"use client"
+
+import { useEffect } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  useEffect(() => {
+    console.error(error)
+  }, [error])
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <div className="text-center space-y-6">
+        <h1 className="text-4xl font-bold">Something went wrong!</h1>
+        <p className="text-muted-foreground">An unexpected error occurred. Please try again later.</p>
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <Button onClick={reset}>Try again</Button>
+          <Button asChild variant="outline">
+            <Link href="/">Go Home</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
