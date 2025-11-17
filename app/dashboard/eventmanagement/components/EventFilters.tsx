@@ -94,7 +94,7 @@ export function EventFilters({ filters, onFiltersChange, categories }: EventFilt
         {/* Event Type Filter */}
         <div className="space-y-2">
           <Label htmlFor="type-filter" className="font-medium text-foreground">
-            Event Type
+            Event Categories
           </Label>
           <select
             id="type-filter"
@@ -102,7 +102,7 @@ export function EventFilters({ filters, onFiltersChange, categories }: EventFilt
             onChange={(e) => onFiltersChange({ ...filters, eventType: e.target.value })}
             className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
           >
-            <option value="ALL">All Types</option>
+            <option value="ALL">All categories</option>
             {uniqueEventTypes.map((type) => (
               <option key={type} value={type}>
                 {type}

@@ -6,6 +6,11 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
+interface event{
+    event: string
+    
+}
+
 export default function TicketBookingsSection({ onSelectTicket }) {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)

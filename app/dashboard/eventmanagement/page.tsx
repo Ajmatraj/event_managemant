@@ -8,6 +8,7 @@ import { EventsTable } from "./components/EventsTable"
 import { EventFilters } from "./components/EventFilters"
 import { ViewEventDialog, DeleteEventDialog } from "./components/EventDialogs"
 import { TicketsManagement } from "./components/TicketsManagement" 
+import { toast, ToastContainer } from "react-toastify"
 
 export interface Event {
   id: string
@@ -55,10 +56,10 @@ export default function EventManagementPage() {
         if (response.ok) {
           const data = await response.json()
           setCategories(data.categories || [])
-          console.log("[v0] Categories fetched:", data.categories)
+          console.log(" Categories fetched:", data.categories)
         }
       } catch (error) {
-        console.error("[v0] Error fetching categories:", error)
+        console.error(" Error fetching categories:", error)
       } finally {
         setLoadingCategories(false)
       }
@@ -77,10 +78,10 @@ export default function EventManagementPage() {
       if (response.ok) {
         const data = await response.json()
         setEvents(data.events || [])
-        console.log("[v0] Events fetched:", data.events)
+        console.log(" Events fetched:", data.events)
       }
     } catch (error) {
-      console.error("[v0] Error fetching events:", error)
+      console.error(" Error fetching events:", error)
     } finally {
       setLoadingEvents(false)
     }
@@ -89,6 +90,7 @@ export default function EventManagementPage() {
   const handleAddEvent = async (newEvent: Omit<Event, "id" | "createdAt">) => {
     await fetchEventsData()
     setShowForm(false)
+    toast.success("Event created successfully")
   }
 
   const handleUpdateEvent = async (updatedEvent: Event) => {
@@ -103,20 +105,18 @@ export default function EventManagementPage() {
       })
 
       if (!response.ok) {
-        const error = await response.text()
-        console.error("[v0] Failed to update event:", error)
-        alert("Failed to update event")
+        const data = await response.text()
+        console.log("failed to update event")
         return
       }
 
       const result = await response.json()
-      console.log("[v0] Event updated successfully:", result)
+    toast.success("Event updated successfully!")
       await fetchEventsData()
       setEditingEvent(null)
       setShowForm(false)
     } catch (error) {
-      console.error("[v0] Error updating event:", error)
-      alert("Error updating event")
+      toast.error(" Error updating event:")
     } finally {
       setLoadingEvents(false)
     }
@@ -138,18 +138,16 @@ export default function EventManagementPage() {
         })
 
         if (!response.ok) {
-          const error = await response.text()
-          console.error("[v0] Failed to delete event:", error)
-          alert("Failed to delete event")
+          const data = await response.text()
+          toast.error(" Failed to delete event:")
           return
         }
 
-        console.log("[v0] Event deleted successfully")
+        toast.success("Event deleted successfully")
         setEvents(events.filter((e) => e.id !== deletingEvent.id))
         setDeletingEvent(null)
       } catch (error) {
-        console.error("[v0] Error deleting event:", error)
-        alert("Error deleting event")
+        toast.error(" Error deleting event:")
       } finally {
         setLoadingEvents(false)
       }
@@ -185,6 +183,8 @@ export default function EventManagementPage() {
   }
 
   return (
+    <>
+    <ToastContainer />
     <main className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
@@ -259,5 +259,6 @@ export default function EventManagementPage() {
         />
       </div>
     </main>
+    </>
   )
 }

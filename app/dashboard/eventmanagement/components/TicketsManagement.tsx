@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Plus, Edit2, Trash2, Eye } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertTriangle } from 'lucide-react'
+import { toast, ToastContainer } from "react-toastify"
+import { data } from "autoprefixer"
 
 export interface TicketType {
   id: string
@@ -54,10 +56,10 @@ export function TicketsManagement({ eventId, eventTitle }: TicketsManagementProp
         const data = await response.json()
         const fetchedTickets = data.ticketTypes || data.tickets || []
         setTickets(fetchedTickets)
-        console.log("[v0] Tickets fetched:", fetchedTickets)
+        console.log(" Tickets fetched:", fetchedTickets)
       }
     } catch (error) {
-      console.error("[v0] Error fetching tickets:", error)
+      toast.error("Error fetching tickets:")
     } finally {
       setLoading(false)
     }
@@ -94,20 +96,20 @@ export function TicketsManagement({ eventId, eventTitle }: TicketsManagementProp
       })
 
       if (!response.ok) {
-        alert("Failed to save ticket type")
+        toast.error("Failed to save ticket type")
         return
       }
 
       const result = await response.json()
-      console.log("[v0] Ticket saved:", result)
+      toast.success(" Ticket saved:", result)
 
       await fetchTickets()
       setShowForm(false)
       setEditingTicket(null)
       setFormData({ name: "", description: "", price: 0 })
     } catch (error) {
-      console.error("[v0] Error saving ticket:", error)
-      alert("Error saving ticket type")
+      console.error(" Error saving ticket:", error)
+      toast.warning("Error saving ticket type")
     } finally {
       setIsSubmitting(false)
     }
@@ -123,16 +125,15 @@ export function TicketsManagement({ eventId, eventTitle }: TicketsManagementProp
       })
 
       if (!response.ok) {
-        alert("Failed to delete ticket type")
+        toast.error("Failed to delete ticket type")
         return
       }
 
-      console.log("[v0] Ticket deleted successfully")
+      toast.success(" Ticket deleted successfully")
       await fetchTickets()
       setDeletingTicket(null)
     } catch (error) {
-      console.error("[v0] Error deleting ticket:", error)
-      alert("Error deleting ticket type")
+      toast.error(" Error deleting ticket:")
     } finally {
       setIsSubmitting(false)
     }
@@ -159,6 +160,8 @@ export function TicketsManagement({ eventId, eventTitle }: TicketsManagementProp
   }
 
   return (
+    <>
+    <ToastContainer/>
     <div className="space-y-6">
       {/* Add Ticket Button */}
       <div className="flex justify-between items-center">
@@ -331,5 +334,6 @@ export function TicketsManagement({ eventId, eventTitle }: TicketsManagementProp
         </DialogContent>
       </Dialog>
     </div>
+    </>
   )
 }

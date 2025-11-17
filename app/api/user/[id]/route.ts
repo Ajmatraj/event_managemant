@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { uploadBufferToCloudinary } from "@/lib/cloudinary";
 
 // ✅ GET user by ID
 export async function GET(
@@ -38,22 +39,25 @@ export async function GET(
   }
 }
 
+//update user by id
 // ✅ UPDATE user by ID
 export async function PUT(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // ✅ FIXED
+    const { id } = await context.params;
     const body = await request.json();
-    const { email, name, avatarUrl, phone } = body;
+
+    const { email, name, avatarUrl, phone, role_id } = body; // 🟢 role_id included
 
     const existingUser = await prisma.user.findUnique({ where: { id } });
+
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // ✅ Check for duplicate email (if changed)
+    // 🔹 Check duplicate email
     if (email && email !== existingUser.email) {
       const emailExists = await prisma.user.findUnique({ where: { email } });
       if (emailExists) {
@@ -64,6 +68,7 @@ export async function PUT(
       }
     }
 
+    // 🔹 Update user including role_id
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
@@ -71,6 +76,7 @@ export async function PUT(
         name,
         avatarUrl,
         phone,
+        role_id, // 🟢 IMPORTANT FIX
       },
       select: {
         id: true,
@@ -79,6 +85,7 @@ export async function PUT(
         phone: true,
         avatarUrl: true,
         createdAt: true,
+        role: true, // 🟢 Return updated role info
       },
     });
 
@@ -86,6 +93,7 @@ export async function PUT(
       { message: "User updated successfully", user: updatedUser },
       { status: 200 }
     );
+
   } catch (error) {
     console.error("❌ Error updating user:", error);
     return NextResponse.json(
@@ -94,6 +102,9 @@ export async function PUT(
     );
   }
 }
+
+
+
 
 // ✅ DELETE user by ID
 export async function DELETE(
