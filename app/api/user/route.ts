@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ✅ Fetch user with their role
+    // ✅ Fetch logged-in user with role
     const user = await prisma.user.findUnique({
       where: { id: session.id },
       include: { role: true },
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ✅ Check role permission
+    // ⭐ Allowed permission
     const allowedRoles = ["ADMIN", "ORGANIZER"];
     if (!allowedRoles.includes(user.role.role_name)) {
       return NextResponse.json(
@@ -35,10 +35,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ✅ Fetch all users
+    // ⭐ Fetch all users with role + avatar image
     const users = await prisma.user.findMany({
       orderBy: { name: "asc" },
-      include: { role: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        createdAt: true,
+        role: {
+          select: {
+            id: true,
+            role_name: true,
+            description: true,
+          },
+        },
+        // 🔥 Only return avatar image URL
+        avatarImage: {
+          select: {
+            image_url: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(

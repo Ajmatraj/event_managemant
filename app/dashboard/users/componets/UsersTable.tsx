@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Eye, Edit2, Trash2 } from 'lucide-react'
+import Image from 'next/image'
 import React from 'react'
 
 interface Role {
@@ -16,6 +17,9 @@ interface User {
   email: string
   phone?: string
   avatarUrl?: string
+  avatarImage?: {
+    image_url: string
+  }
   createdAt?: string
   role_id: string
   role?: {
@@ -69,6 +73,9 @@ export function UsersTable({
       <table className="w-full">
         <thead>
           <tr className="border-b border-border bg-muted/50">
+          <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+            Profile
+          </th>
             <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
               Name
             </th>
@@ -89,6 +96,24 @@ export function UsersTable({
               key={user.id}
               className="border-b border-border hover:bg-muted/30 transition-colors"
             >
+             <td className="px-4 py-3 text-sm text-foreground">
+              {user.avatarImage?.image_url ? (
+                <Image
+                  src={user.avatarImage.image_url}
+                  alt={user.name}
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-semibold text-gray-700">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </td> 
+
+
+
               <td className="px-4 py-3 text-sm text-foreground">
                 <div className="font-medium">{user.name}</div>
                 <div className="text-xs text-muted-foreground sm:hidden">{user.email}</div>

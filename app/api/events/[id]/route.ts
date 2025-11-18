@@ -39,14 +39,17 @@ export async function GET(
 }
 
 // ✅ UPDATE EVENT BY ID (Supports updating banner/video)
-export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await context.params;
-    console.log(`✏️ Attempting to update event with ID: ${id}`);
+    console.log(`✏️ Updating event: ${id}`);
 
+    // ---- AUTH CHECK ----
     const session = await getSession();
     if (!session?.id) {
-      console.warn("🚫 Unauthorized access attempt.");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -56,71 +59,136 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     });
 
     if (!user?.role || !["ADMIN", "ORGANIZER"].includes(user.role.role_name)) {
-      console.warn(`🚫 Access denied for user ${session.id}`);
       return NextResponse.json(
         { error: "Only ADMIN or ORGANIZER can update events" },
         { status: 403 }
       );
     }
 
+    // ---- FORM DATA ----
     const formData = await req.formData();
-    console.log("📦 Parsed form data for update.");
 
-    const title = formData.get("title") as string | null;
-    const description = formData.get("description") as string | null;
-    const location = formData.get("location") as string | null;
-    const start_date = formData.get("start_date") as string | null;
-    const end_date = formData.get("end_date") as string | null;
+    const clean = (val: any) =>
+      val === "" || val === "null" || val === null ? undefined : val;
+
+    const title = clean(formData.get("title"));
+    const description = clean(formData.get("description"));
+    const location = clean(formData.get("location"));
+    const start_date = clean(formData.get("start_date"));
+    const end_date = clean(formData.get("end_date"));
+    const status = clean(formData.get("status"));
+
     const capacityRaw = formData.get("capacity");
-    const status = formData.get("status") as string | null;
-
-    const capacity = capacityRaw ? Number(capacityRaw) : undefined;
+    const capacity =
+      capacityRaw && !isNaN(Number(capacityRaw))
+        ? Number(capacityRaw)
+        : undefined;
 
     const bannerFile = formData.get("bannerImage") as File | null;
     const promoFile = formData.get("promoVideo") as File | null;
 
-    const existingEvent = await prisma.event.findUnique({ where: { id } });
+    // ---- GET EXISTING EVENT ----
+    const existingEvent = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        bannerImage: true,
+        promoVideo: true,
+      },
+    });
+
     if (!existingEvent) {
-      console.warn(`⚠️ Event not found for update: ${id}`);
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
     let bannerImageId = existingEvent.banner_image_id;
     let promoVideoId = existingEvent.promo_video_id;
 
-    // 🖼️ Upload new banner if provided
+    // ----------------------------
+    //   🖼️ BANNER IMAGE UPDATE
+    // ----------------------------
     if (bannerFile) {
-      console.log("📤 Uploading new banner image...");
-      const buffer = Buffer.from(await bannerFile.arrayBuffer());
-      const uploadRes = await uploadBufferToCloudinary(buffer, bannerFile.type, "event_banners");
-      console.log("✅ Banner upload successful:", uploadRes.url);
+      if (!bannerFile.type.startsWith("image/")) {
+        return NextResponse.json(
+          { error: "Banner must be an image" },
+          { status: 400 }
+        );
+      }
 
+      console.log("📤 Uploading banner...");
+      const buffer = Buffer.from(await bannerFile.arrayBuffer());
+      const upload = await uploadBufferToCloudinary(
+        buffer,
+        bannerFile.type,
+        "event_banners"
+      );
+
+      // Create new DB entry
       const newBanner = await prisma.image.create({
-        data: { image_url: uploadRes.url, image_type: "BANNER" },
+        data: {
+          image_url: upload.url,
+          image_type: "BANNER",
+        },
       });
+
+      // Delete old banner from DB
+      if (existingEvent.banner_image_id) {
+        await prisma.image.delete({
+          where: { id: existingEvent.banner_image_id },
+        });
+      }
+
       bannerImageId = newBanner.id;
     }
 
-    // 🎥 Upload new promo video if provided
+    // ----------------------------
+    //   🎥 PROMO VIDEO UPDATE
+    // ----------------------------
     if (promoFile) {
-      console.log("📤 Uploading new promo video...");
-      const buffer = Buffer.from(await promoFile.arrayBuffer());
-      const uploadRes = await uploadBufferToCloudinary(buffer, promoFile.type, "event_videos");
-      console.log("✅ Promo upload successful:", uploadRes.url);
+      if (!promoFile.type.startsWith("video/")) {
+        return NextResponse.json(
+          { error: "Promo file must be a video" },
+          { status: 400 }
+        );
+      }
 
+      console.log("📤 Uploading promo video...");
+      const buffer = Buffer.from(await promoFile.arrayBuffer());
+      const upload = await uploadBufferToCloudinary(
+        buffer,
+        promoFile.type,
+        "event_videos"
+      );
+
+      // Create new DB video
       const newVideo = await prisma.video.create({
-        data: { video_url: uploadRes.url, video_type: "PROMO" },
+        data: {
+          video_url: upload.url,
+          video_type: "PROMO",
+        },
       });
+
+      // Delete old promo video from DB
+      if (existingEvent.promo_video_id) {
+        await prisma.video.delete({
+          where: { id: existingEvent.promo_video_id },
+        });
+      }
+
       promoVideoId = newVideo.id;
     }
 
+    // ----------------------------
+    //     📌 UPDATE THE EVENT
+    // ----------------------------
     const updatedEvent = await prisma.event.update({
       where: { id },
       data: {
         title: title ?? existingEvent.title,
         description: description ?? existingEvent.description,
         location: location ?? existingEvent.location,
-        start_date: start_date ? new Date(start_date) : existingEvent.start_date,
+        start_date: start_date
+          ? new Date(start_date)
+          : existingEvent.start_date,
         end_date: end_date ? new Date(end_date) : existingEvent.end_date,
         capacity: capacity ?? existingEvent.capacity,
         status: status ?? existingEvent.status,
@@ -146,6 +214,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     );
   }
 }
+
 
 // ✅ DELETE EVENT BY ID
 export async function DELETE(_req: NextRequest, context: { params: Promise<{ id: string }> }) {

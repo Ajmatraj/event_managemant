@@ -38,6 +38,7 @@ enum PaymentMethod {
 }
 
 enum ImageType {
+  AVATAR
   BANNER
   REFERENCE
   GALLERY
@@ -62,17 +63,18 @@ model RoleTable {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  role_id   String?
-  name      String
-  email     String     @unique
-  password  String
-  avatarUrl String?
-  phone     String?
-  createdAt DateTime   @default(now())
-  role      RoleTable? @relation(fields: [role_id], references: [id])
+  id           String   @id @default(uuid())
+  role_id      String?
+  name         String
+  email        String   @unique
+  password     String
+  avatarUrl_Id String?  @unique
+  phone        String?
+  createdAt    DateTime @default(now())
 
   // Relations
+  role          RoleTable?      @relation(fields: [role_id], references: [id])
+  avatarImage   Image?          @relation("AvatarImage", fields: [avatarUrl_Id], references: [id])
   events        Event[]         @relation("OrganizerEvents")
   tickets       Ticket[]
   payments      Payment[]
@@ -80,6 +82,7 @@ model User {
   notifications Notification[]
   surveys       Survey[]
   ads           Advertisement[]
+  images        Image[]         @relation("UserImages")
 
   @@index([email])
 }
@@ -257,6 +260,7 @@ model Survey {
 model Image {
   id          String    @id @default(uuid())
   event_id    String?
+  user_id     String?
   ad_id       String?
   sponsor_id  String?
   image_url   String
@@ -265,9 +269,12 @@ model Image {
   uploaded_at DateTime  @default(now())
 
   event     Event?         @relation("EventImages", fields: [event_id], references: [id])
+  user      User?          @relation("UserImages", fields: [user_id], references: [id])
   ad        Advertisement? @relation(fields: [ad_id], references: [id])
   sponsor   Sponsorship?   @relation(fields: [sponsor_id], references: [id])
   bannerFor Event?         @relation("BannerImage")
+
+  avatarUser User? @relation("AvatarImage")
 }
 
 model Video {

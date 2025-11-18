@@ -22,7 +22,9 @@ interface User {
   name: string
   email: string
   password?: string
-  avatarUrl?: string
+ avatarImage?: {
+    image_url: string
+  }
   createdAt?: string
   role_id: string
   role?: Role
@@ -51,8 +53,10 @@ export function UserForm({
     email: initialData?.email || "",
     password: "",
     role_id: defaultRole,
+    avatarUrl: initialData?.avatarUrl || "",
   })
 
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,23 +64,50 @@ export function UserForm({
     setLoading(true)
 
     try {
-      await onSubmit(formData)
+      const payload: Partial<User> = {
+        ...formData,
+      }
+
+      // Attach file if exists
+      if (avatarFile) {
+        payload.avatarFile = avatarFile as any
+      }
+
+      await onSubmit(payload)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-
     setFormData(prev => ({
       ...prev,
       [name]: value,
     }))
   }
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+    setAvatarFile(file)
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+
+      {/* Avatar Upload */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Profile Image</label>
+       <Input
+      type="file"
+      accept="image/*"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        setFormData((prev) => ({ ...prev, avatarFile: file }));
+      }}
+      />
+
+      </div>
 
       {/* Full Name */}
       <div>
@@ -84,7 +115,7 @@ export function UserForm({
         <Input
           name="name"
           value={formData.name}
-          onChange={handleChange}
+          onChange={handleInputChange}
           placeholder="Full name"
           required
         />
@@ -97,13 +128,13 @@ export function UserForm({
           name="email"
           type="email"
           value={formData.email}
-          onChange={handleChange}
+          onChange={handleInputChange}
           placeholder="user@example.com"
           required
         />
       </div>
 
-      {/* Password - required only in create mode */}
+      {/* Password - Only for create */}
       {!isEditing && (
         <div>
           <label className="block text-sm font-medium mb-1">Password</label>
@@ -111,9 +142,9 @@ export function UserForm({
             name="password"
             type="password"
             value={formData.password}
-            onChange={handleChange}
+            onChange={handleInputChange}
             placeholder="Enter password"
-            required={!isEditing}
+            required
           />
         </div>
       )}
@@ -121,7 +152,6 @@ export function UserForm({
       {/* Role Selection */}
       <div>
         <label className="block text-sm font-medium mb-1">Role</label>
-
         <Select
           value={formData.role_id}
           onValueChange={(value) =>

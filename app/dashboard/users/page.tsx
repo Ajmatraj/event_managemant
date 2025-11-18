@@ -27,7 +27,9 @@ interface User {
   name: string
   email: string
   phone?: string
-  avatarUrl?: string
+ avatarImage?: {
+    image_url: string
+  }
   createdAt?: string
   role_id: string
   role?: {
@@ -115,34 +117,51 @@ export default function UsersPage() {
     }
   }
 
-  const handleUpdateUser = async (formData: Partial<User>) => {
-    if (!selectedUser) return
+const handleUpdateUser = async (formData: Partial<User>) => {
+  if (!selectedUser) return;
 
-    try {
-      const response = await fetch(`http://localhost:3000/api/user/${selectedUser.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
+  try {
+    const fd = new FormData();
 
-      if (response.ok) {
-        const updatedUser = await response.json()
-        setUsers(
-          users.map((u) => (u.id === selectedUser.id ? updatedUser.user : u))
-        )
-        setIsEditDialogOpen(false)
-        setSelectedUser(null)
-        toast.success('User updated successfully!')
-      } else {
-        toast.error('Failed to update user')
-      }
-    } catch (error) {
-      console.error('Error updating user:', error)
-      toast.error('Error updating user')
+    if (formData.name) fd.append("name", formData.name);
+    if (formData.email) fd.append("email", formData.email);
+    if (formData.phone) fd.append("phone", formData.phone);
+    if (formData.role_id) fd.append("role_id", formData.role_id);
+
+    // avatar file comes as formData.avatarFile (you will set this in form)
+    if ((formData as any).avatarFile) {
+      fd.append("avatar", (formData as any).avatarFile);
     }
+
+    const response = await fetch(
+      `http://localhost:3000/api/user/${selectedUser.id}`,
+      {
+        method: "PUT",
+        body: fd, // 🚀 IMPORTANT — NO HEADERS
+      }
+    );
+
+    if (response.ok) {
+      const updatedUser = await response.json();
+
+      setUsers(
+        users.map(u =>
+          u.id === selectedUser.id ? updatedUser.user : u
+        )
+      );
+
+      setIsEditDialogOpen(false);
+      setSelectedUser(null);
+      toast.success("User updated successfully!");
+    } else {
+      toast.error("Failed to update user");
+    }
+  } catch (error) {
+    console.error("Error updating user:", error);
+    toast.error("Error updating user");
   }
+};
+
 
   const handleUpdateUserRole = async (userId: string, roleId: string) => {
     try {
