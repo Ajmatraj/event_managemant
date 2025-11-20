@@ -12,11 +12,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { event_id, ticket_type_id, payment_method } = await req.json();
+    const { event_id, ticket_type_id } = await req.json();
 
-    if (!event_id || !ticket_type_id || !payment_method) {
+    if (!event_id || !ticket_type_id ) {
       return NextResponse.json(
-        { error: "event_id, ticket_type_id and payment_method are required" },
+        { error: "event_id, ticket_type_id are required" },
         { status: 400 }
       );
     }
@@ -58,14 +58,15 @@ export async function POST(req: NextRequest) {
 
     // 5️⃣ Create Payment Entry
     const payment = await prisma.payment.create({
-      data: {
-        ticket_id: ticket.id,
-        user_id: session.id,
-        amount: ticketType.price,
-        payment_method,
-        payment_status: "PENDING", // default step
-      },
-    });
+  data: {
+    ticket_id: ticket.id,
+    user_id: session.id,
+    amount: ticketType.price,
+    payment_status: "PENDING",
+    payment_method: "ESEWA", // 👈 add this default  
+  },
+});
+
 
     return NextResponse.json({
       message: "Ticket booked successfully",

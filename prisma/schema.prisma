@@ -147,14 +147,15 @@ model TicketType {
 }
 
 model Ticket {
-  id         String   @id @default(uuid())
-  event_id   String
-  user_id    String
-  type_id    String
-  qr_code    String?
-  badge_url  String?
-  issue_date DateTime @default(now())
-  status     String
+  id          String   @id @default(uuid())
+  event_id    String
+  user_id     String
+  type_id     String
+  qr_code     String?
+  badge_url   String?
+  issue_date  DateTime @default(now())
+  status      String
+  isPurchased Boolean  @default(false) // <-- Correct placement
 
   event   Event      @relation(fields: [event_id], references: [id])
   user    User       @relation(fields: [user_id], references: [id])
@@ -163,13 +164,15 @@ model Ticket {
 }
 
 model Payment {
-  id             String        @id @default(uuid())
-  ticket_id      String        @unique
-  user_id        String
-  amount         Float
-  payment_method PaymentMethod
-  payment_date   DateTime      @default(now())
-  payment_status PaymentStatus @default(PENDING)
+  id               String        @id @default(uuid())
+  ticket_id        String        @unique
+  user_id          String
+  amount           Float
+  payment_method   PaymentMethod
+  payment_date     DateTime      @default(now())
+  payment_status   PaymentStatus @default(PENDING)
+  transaction_uuid String?       @unique  // Store eSewa's transaction ID
+  signature        String?                // Optional for verification record
 
   ticket Ticket @relation(fields: [ticket_id], references: [id])
   user   User   @relation(fields: [user_id], references: [id])
