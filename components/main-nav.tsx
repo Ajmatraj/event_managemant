@@ -18,6 +18,12 @@ export function MainNav() {
       active: pathname === "/",
       public: true,
     },
+    {
+      href: "/event",
+      label: "Event",
+      active: pathname === "/",
+      public: true,
+    },
     
     {
       href: "/admin",

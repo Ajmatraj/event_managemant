@@ -1,11 +1,12 @@
+'use client'
+import Herosection from '@/components/home/Herosection'
 import React from 'react'
-import { Header } from '@/components/header'
+
 
 const page = () => {
   return (
     <>
-    <Header />
-    home page
+    <Herosection/>
     </>
   )
 }
